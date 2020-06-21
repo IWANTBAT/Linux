@@ -1,0 +1,83 @@
+ #pragma once                                                                                         
+E>  2 #include<stdio.h>
+E>  3 #include<unistd.h>
+E>  4 #include<sys/socket.h>
+E>  5 #include<netinet/in.h>
+E>  6 #include<arpa/inet.h>
+E>  7 #include<iostream>
+    8 
+    9 class UdpSvr
+   10 {
+   11   public:
+   12     UdpSvr()
+   13     {
+   14 
+   15     }
+   16     
+   17     ~UdpSvr()
+   18     {
+   19 
+   20 
+   21     }
+   22 
+   23     
+   24     bool CreateSock()
+   25     {
+E> 26       sockfd_ = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+   27       if(sockfd_<0)
+   28       {
+E> 29         perror("socket");
+   30         return false;
+   31       }
+   32       return true;
+   33     }
+    bool Bind(std::string& ip,uint16_t port)
+   36     {
+E> 37       struct sockaddr_in addr;
+E> 38       addr.sin_family = AF_INET;
+   39       addr.sin_port = htons(port);
+   40       //
+   41       addr.sin_addr.sin_addr = inet_addr(ip.c_str());
+   42 
+   43      int ret =  bind(sockfd_,(struct sockaddr*)&addr,sizeof(addr));
+   44      if(ret<0)
+   45      {
+E> 46        perror("bind");
+   47        return false;
+   48      }
+E> 49      retrun true;
+   50     }
+   51 
+E> 52     bool Send(std::string& data,struct sockaddr_in* dest_addr)
+   53     {
+E> 54       int send_size = sendto(sockfd_,data.c_str(),data.size(),0,(struct sockaddr*)&dest_addr,sizeof(s      truct sockaddr_in))
+   55         if(send_size < 0)
+   56         {
+   57           perror("sendto");
+   58           return false;
+   59         }
+   60       return true;
+   61     }                                                                                                
+   62 
+E> 63     bool Recv(std::string* data,struct sockaddr_in* src_addr)
+   64     {
+   65       char buf[1024] = {0};
+E> 66       socklen_t addrlen = sizeof(struct sockaddr_in); 
+  ssize_t recv_size = recvfrom(sockfd_,buf,sizeof(buf)-1,0,(struct sockaddr_in*)&src_addr,&addrle      n);
+   68       if(recv_size < 0)
+   69       {
+   70         return false;
+   71       }
+   72       data->assign(buf,recv_size);
+   73       return true;
+   74     }
+   75 
+   76     void Close()
+   77     {
+E> 78       close(sockfd_);
+   79       sockfd_ = -1;
+   80 
+   81     }
+   82   private:
+   83     int sockfd_;
+}
