@@ -1,87 +1,85 @@
-#include<stdio.h>
 #include<unistd.h>
-#include<string.h>
 #include<ctype.h>
+#include<string.h>
 #include<sys/wait.h>
 #include<stdlib.h>
+#include<stdio.h>
+
 char g_command[1024];
 
-int GetCommand(){
-    //字符数组清空
-    memset(g_command,'\0',sizeof(g_command));
-
-    printf("[@wxw minishell]$");
-    if(fgets(g_command,sizeof(g_command)-1,stdin) == NULL)
-    {
-        printf("读取错误\n");
-        return -1;
-    }
-    return 0;
+int Getcommand(){
+  //字符数组清空
+  memset(g_command,'\0',sizeof(g_command));
+  
+  printf("[test@localhost minishell]$ ");
+  fflush(stdout);
+  if(fgets(g_command,sizeof(g_command)-1,stdin) == NULL){
+    
+    printf("fgets error\n");
+    return -1;
+  }
+  return 0;
 }
 
-int ExecCommand(char* argv[]){
-    if(argv[0] == NULL){
-        printf("ExecCommand 错误\n");
-        return -1;
-    }
-
-    pid_t pid = fork();
-    if(pid<0){
-        printf("创建子进程失败\n");
-        return -1;
-    }
-    else if(pid == 0){
-        //child
-        execvp(argv[0],argv);
-        //
-        exit(0);
-    }
-    else{
-        //father
-        waitpid(pid,NULL,0);
-    }
+int Execlcommand(char* argv[]){
+  if(argv[0] == NULL){
+    printf("Execlcommand error\n");
+    return -1;
+  }
+  pid_t pid = fork();
+  if(pid<0){
+    printf("create pid false\n");
+    return -1;
+  }
+  else if(pid == 0){
+    //child
+    //进程程序替换
+    execvp(argv[0],argv);
+    //如果替换失败了，就要杀掉子进程
+    exit(0);
+  }
+  else{
+    //father
+    waitpid(pid,NULL,0);
+  }
+  return 0;
 }
-int DealCommand(char* command){
-    //差错控制
-    if(!command || *command == '\0')
-    {
-        printf("command 错误\n");
-        return -1;
-    }
 
-    //拆分命令
-    int argc = 0;
-    char* argv[1024] = {0};
+int Docommand(char* command){
+  if(!command || *command == '\0'){
+    printf("command error\n");
+    return -1;
+  }
 
-    while(*command){
-        while(!isspace(*command) && *command !='\0'){
-            argv[argc] = command;
-            argc++;
-            while(!isspace(*command) && *command != '\0'){
-                command++;
-            }
-            *command = '\0';
-        }
+  //拆分命令
+  int argc = 0;
+  char* argv1[1024] = {0};
+
+  while(*command){
+    while(!isspace(*command) && *command != '\0'){
+      argv1[argc] = command;
+      argc++;
+      while(!isspace(*command) && *command != '\0'){
         command++;
+      }
+      *command = '\0';
     }
-    argv[argc] = NULL;
+    command++;
+  }
+  argv1[argc] = NULL;//命令行参数必须以NULL结尾
 
-    ExecCommand(argv);
-
-    return 0;
+  //创建子进程进行程序替换
+  Execlcommand(argv1);
+  return 0;
 }
 int main()
 {
-    while(1)
-    {
-        //从标准输入读取命令
-        if(GetCommand() == -1){
-            continue;
-        }
-
-        //拆分字符串，创建子进程，子进程程序替换
-        DealCommand(g_command);
-
-    }
-    return 0;
+  while(1){
+  //从标准输入中读取命令
+  while(Getcommand() == -1)
+    continue;
+  //拆分字符串，创建子进程，进程程序替换
+  Docommand(g_command);
+  }
+  return 0;
 }

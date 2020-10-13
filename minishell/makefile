@@ -1,2 +1,2 @@
 minishell:minishell.c
-	gcc $^ -o $@ -g
+	gcc $^ -o $@ 
